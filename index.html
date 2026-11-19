@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#eef3f0">
+  <meta name="description" content="See your upcoming subscriptions, monthly average, and expected charges in one private browser-based view.">
+  <title>Subscription Radar</title>
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="app.mjs"></script>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">◉</span><span>Subscription Radar</span></div>
+      <div class="top-actions">
+        <button class="button button-quiet" id="import-button" type="button">Import list</button>
+        <input id="import-file" type="file" accept=".json,application/json" hidden>
+        <button class="button button-primary" id="add-button" type="button">Add subscription</button>
+      </div>
+    </header>
+
+    <div class="message" id="message" role="status" aria-live="polite" hidden></div>
+
+    <main id="dashboard">
+      <section class="intro">
+        <p class="eyebrow">YOUR SUBSCRIPTION PICTURE</p>
+        <h1>What’s coming up</h1>
+        <p class="intro-copy">Know what may charge next, what it costs over time, and which account pays for it.</p>
+      </section>
+
+      <section class="review-banner" id="review-banner" hidden>
+        <div><strong id="review-banner-title"></strong><p>Check each detected charge before it joins your totals.</p></div>
+        <button class="button button-secondary" id="review-button" type="button">Review candidates</button>
+      </section>
+
+      <section class="panel upcoming-panel" aria-labelledby="upcoming-title">
+        <div class="section-heading"><div><p class="eyebrow">NEXT CHARGES</p><h2 id="upcoming-title">Upcoming renewals</h2></div><span class="section-aside" id="upcoming-aside"></span></div>
+        <div id="upcoming-list" class="upcoming-list"></div>
+        <button id="show-all-button" class="text-button" type="button" hidden>Show all subscriptions</button>
+      </section>
+
+      <section class="cost-section" aria-labelledby="cost-title">
+        <div class="section-heading"><div><p class="eyebrow">YOUR COST PICTURE</p><h2 id="cost-title">The numbers behind it</h2></div></div>
+        <div class="stat-grid">
+          <button id="monthly-card" class="stat-card stat-monthly" type="button" aria-label="See monthly average breakdown">
+            <span class="stat-label">Monthly average <span aria-hidden="true">↗</span></span>
+            <strong id="monthly-value">$0.00</strong>
+            <span class="stat-caption">Yearly plans spread across 12 months</span>
+          </button>
+          <button id="scheduled-card" class="stat-card stat-scheduled" type="button" aria-label="See scheduled charges this month">
+            <span class="stat-label">Scheduled this month <span aria-hidden="true">↗</span></span>
+            <strong id="scheduled-value">$0.00</strong>
+            <span class="stat-caption">Expected charges, not posted payments</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="panel category-panel" aria-labelledby="category-title">
+        <div class="section-heading"><div><p class="eyebrow">WHERE IT GOES</p><h2 id="category-title">By category</h2></div><span class="section-aside">Monthly average</span></div>
+        <div id="category-list" class="category-list"></div>
+      </section>
+
+      <section class="panel manage-panel" aria-labelledby="manage-title">
+        <div class="section-heading"><div><p class="eyebrow">YOUR LIST</p><h2 id="manage-title">Subscriptions</h2></div><span class="section-aside" id="subscription-count"></span></div>
+        <div id="subscription-list" class="subscription-list"></div>
+      </section>
+
+      <p class="privacy-note">Your entries stay in this browser. There is no account or bank connection in this version, and clearing browser data can remove your list.</p>
+    </main>
+
+    <main id="review-screen" hidden>
+      <button class="text-button back-button" id="back-button" type="button">← Back to overview</button>
+      <section class="intro review-intro"><p class="eyebrow">PRIVATE IMPORT REVIEW</p><h1>Review detected charges</h1><p class="intro-copy">These are suggestions from past transactions. Confirm, correct, or dismiss each before it affects your overview.</p></section>
+      <div id="review-content"></div>
+    </main>
+  </div>
+
+  <dialog id="entry-dialog" class="dialog">
+    <form id="entry-form">
+      <div class="dialog-heading"><div><p class="eyebrow">SUBSCRIPTION DETAILS</p><h2 id="entry-title">Add subscription</h2></div><button class="icon-button" id="entry-close" type="button" aria-label="Close">×</button></div>
+      <div class="field-grid">
+        <label class="field field-wide">Name <input id="entry-name" name="name" type="text" maxlength="120" required autocomplete="off" placeholder="e.g. Music service"></label>
+        <label class="field">Charge amount <span class="input-prefix"><span>$</span><input id="entry-amount" name="amount" type="number" min="0.01" max="1000000" step="0.01" required placeholder="12.00"></span></label>
+        <label class="field">Billing cycle <select id="entry-cadence" name="cadence"><option value="monthly">Monthly</option><option value="weekly">Weekly</option><option value="yearly">Yearly</option></select></label>
+        <label class="field">Next charge date <input id="entry-date" name="nextDate" type="date" required></label>
+        <label class="field">Category <input id="entry-category" name="category" type="text" maxlength="80" list="category-options" placeholder="e.g. Entertainment"></label>
+        <label class="field field-wide">Payment method <input id="entry-payment" name="paymentMethod" type="text" maxlength="80" list="payment-options" placeholder="e.g. Amex or Chase checking"></label>
+      </div>
+      <datalist id="category-options"></datalist><datalist id="payment-options"></datalist>
+      <p class="form-hint">Use a name you recognize. Do not enter a full card or bank account number.</p>
+      <div class="dialog-actions"><button class="button button-quiet" id="entry-cancel" type="button">Cancel</button><button class="button button-primary" id="entry-save" type="submit">Save subscription</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="breakdown-dialog" class="dialog breakdown-dialog">
+    <div class="dialog-heading"><div><p class="eyebrow" id="breakdown-eyebrow"></p><h2 id="breakdown-title"></h2></div><button class="icon-button" id="breakdown-close" type="button" aria-label="Close">×</button></div>
+    <p class="breakdown-intro" id="breakdown-intro"></p>
+    <div id="breakdown-list" class="breakdown-list"></div>
+  </dialog>
+</body>
+</html>
